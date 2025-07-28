@@ -3,35 +3,75 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Employee Dashboard</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    form {
+      display: grid;
+      gap: 10px;
+    }
+    input, select, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .container {
+        padding: 15px;
+      }
+    }
+  </style>
 </head>
 
 <body>
   <script>
-  // Get user from localStorage
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // Redirect to login if not found
-  if (!user) {
-    alert("Please log in first.");
-    window.location.href = "index.html";
-  }
-
-  // Optional: Restrict based on role
-  const isAdminPage = window.location.pathname.includes("admin.html");
-  const isEmployeePage = window.location.pathname.includes("dashboard.html");
-
-  if (isAdminPage && user.role !== "admin") {
-    alert("Access denied. Admins only.");
-    window.location.href = "dashboard.html";
-  }
-
-  if (isEmployeePage && user.role !== "employee") {
-    alert("Access denied. Employees only.");
-    window.location.href = "admin.html";
-  }
-</script>
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "employee") {
+      alert("Please log in as employee");
+      window.location.href = "index.html";
+    }
+  </script>
 
   <div class="container">
     <h1>Welcome, Employee</h1>
@@ -57,29 +97,16 @@
 
         <button type="submit">Apply</button>
       </form>
-
     </section>
 
-    <section>
+    <section class="status">
       <h2>Leave History</h2>
-      <table>
+      <table id="history">
         <tr>
           <th>From</th>
           <th>To</th>
           <th>Type</th>
           <th>Status</th>
-        </tr>
-        <tr>
-          <td>2025-07-01</td>
-          <td>2025-07-03</td>
-          <td>Sick</td>
-          <td>✅ Approved</td>
-        </tr>
-        <tr>
-          <td>2025-07-15</td>
-          <td>2025-07-15</td>
-          <td>Casual</td>
-          <td>❌ Rejected</td>
         </tr>
       </table>
     </section>
@@ -90,7 +117,8 @@
       e.preventDefault();
 
       const data = {
-        user_id: 1,  // Replace with logged-in user ID
+        name: user.name,
+        email: user.email,
         start_date: document.getElementById("start").value,
         end_date: document.getElementById("end").value,
         leave_type: document.getElementById("type").value,
@@ -103,11 +131,33 @@
         body: JSON.stringify(data)
       })
         .then(res => res.json())
-        .then(res => alert(res.message))
+        .then(res => {
+          alert(res.message);
+          loadStatus();
+        })
         .catch(err => alert("Error: " + err));
     });
-  </script>
 
+    function loadStatus() {
+      fetch(`https://leave-saas-backend.onrender.com/leave/status?email=${user.email}`)
+        .then(res => res.json())
+        .then(data => {
+          const table = document.getElementById("history");
+          table.innerHTML = `<tr><th>From</th><th>To</th><th>Type</th><th>Status</th></tr>`;
+          data.forEach(req => {
+            table.innerHTML += `
+              <tr>
+                <td>${req.start_date}</td>
+                <td>${req.end_date}</td>
+                <td>${req.leave_type}</td>
+                <td>${req.status}</td>
+              </tr>`;
+          });
+        });
+    }
+
+    loadStatus();
+  </script>
 </body>
 
 </html>
