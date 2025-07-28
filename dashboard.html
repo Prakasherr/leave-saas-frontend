@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <script>
+  // Get user from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  // Redirect to login if not found
+  if (!user) {
+    alert("Please log in first.");
+    window.location.href = "index.html";
+  }
+
+  // Optional: Restrict based on role
+  const isAdminPage = window.location.pathname.includes("admin.html");
+  const isEmployeePage = window.location.pathname.includes("dashboard.html");
+
+  if (isAdminPage && user.role !== "admin") {
+    alert("Access denied. Admins only.");
+    window.location.href = "dashboard.html";
+  }
+
+  if (isEmployeePage && user.role !== "employee") {
+    alert("Access denied. Employees only.");
+    window.location.href = "admin.html";
+  }
+</script>
+
+  <div class="container">
+    <h1>Welcome, Employee</h1>
+
+    <section>
+      <h2>Apply for Leave</h2>
+      <form id="leaveForm">
+        <label>Start Date</label>
+        <input type="date" id="start" required>
+
+        <label>End Date</label>
+        <input type="date" id="end" required>
+
+        <label>Leave Type</label>
+        <select id="type">
+          <option>Sick</option>
+          <option>Casual</option>
+          <option>Paid</option>
+        </select>
+
+        <label>Reason</label>
+        <input type="text" id="reason" required>
+
+        <button type="submit">Apply</button>
+      </form>
+
+    </section>
+
+    <section>
+      <h2>Leave History</h2>
+      <table>
+        <tr>
+          <th>From</th>
+          <th>To</th>
+          <th>Type</th>
+          <th>Status</th>
+        </tr>
+        <tr>
+          <td>2025-07-01</td>
+          <td>2025-07-03</td>
+          <td>Sick</td>
+          <td>✅ Approved</td>
+        </tr>
+        <tr>
+          <td>2025-07-15</td>
+          <td>2025-07-15</td>
+          <td>Casual</td>
+          <td>❌ Rejected</td>
+        </tr>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    document.getElementById("leaveForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const data = {
+        user_id: 1,  // Replace with logged-in user ID
+        start_date: document.getElementById("start").value,
+        end_date: document.getElementById("end").value,
+        leave_type: document.getElementById("type").value,
+        reason: document.getElementById("reason").value
+      };
+
+      fetch("http://leave-saas-backend.onrender.com/leave/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      })
+        .then(res => res.json())
+        .then(res => alert(res.message))
+        .catch(err => alert("Error: " + err));
+    });
+  </script>
+
+</body>
+
+</html>

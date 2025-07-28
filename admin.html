@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <script>
+        // Get user from localStorage
+        const user = JSON.parse(localStorage.getItem("user"));
+
+        // Redirect to login if not found
+        if (!user) {
+            alert("Please log in first.");
+            window.location.href = "index.html";
+        }
+
+        // Optional: Restrict based on role
+        const isAdminPage = window.location.pathname.includes("admin.html");
+        const isEmployeePage = window.location.pathname.includes("dashboard.html");
+
+        if (isAdminPage && user.role !== "admin") {
+            alert("Access denied. Admins only.");
+            window.location.href = "dashboard.html";
+        }
+
+        if (isEmployeePage && user.role !== "employee") {
+            alert("Access denied. Employees only.");
+            window.location.href = "admin.html";
+        }
+    </script>
+
+    <div class="container">
+        <h1>Welcome, Admin</h1>
+
+        <section>
+            <h2>Leave Requests</h2>
+            <table id="requestsTable">
+                <tr>
+                    <th>Name</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                </tr>
+                <tr>
+                    <td>Priya</td>
+                    <td>2025-07-01</td>
+                    <td>2025-07-03</td>
+                    <td>Sick</td>
+                    <td>
+                        <button>✅ Approve</button>
+                        <button>❌ Reject</button>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>Employees</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Total Leaves</th>
+                </tr>
+                <tr>
+                    <td>John</td>
+                    <td>john@example.com</td>
+                    <td>8</td>
+                </tr>
+            </table>
+        </section>
+    </div>
+    
+
+
+    <script>
+        fetch("http://127.0.0.1:5000/admin/requests")
+            .then(res => res.json())
+            .then(data => {
+                const table = document.getElementById("requestsTable");
+
+                data.forEach(req => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+        <td>${req.name}</td>
+        <td>${req.start_date}</td>
+        <td>${req.end_date}</td>
+        <td>${req.leave_type}</td>
+        <td>${req.status}</td>
+        <td>
+          <button onclick="updateStatus(${req.id}, 'approved')">✅</button>
+          <button onclick="updateStatus(${req.id}, 'rejected')">❌</button>
+        </td>`;
+
+                    table.appendChild(row);
+                });
+            });
+
+        function updateStatus(id, status) {
+            fetch(`http://leave-saas-backend.onrender.com/admin/requests/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status })
+            })
+                .then(res => res.json())
+                .then(res => {
+                    alert(res.message);
+                    location.reload();
+                });
+        }
+    </script>
+
+
+</body>
+
+</html>
