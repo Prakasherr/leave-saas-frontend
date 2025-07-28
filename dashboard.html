@@ -97,7 +97,7 @@
         reason: document.getElementById("reason").value
       };
 
-      fetch("http://leave-saas-backend.onrender.com/leave/apply", {
+      fetch("https://leave-saas-backend.onrender.com/leave/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)

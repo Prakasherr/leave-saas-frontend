@@ -75,7 +75,7 @@
             </table>
         </section>
     </div>
-    
+
 
 
     <script>
@@ -103,7 +103,7 @@
             });
 
         function updateStatus(id, status) {
-            fetch(`http://leave-saas-backend.onrender.com/admin/requests/${id}`, {
+            fetch(`https://leave-saas-backend.onrender.com/admin/requests/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status })
@@ -112,6 +112,9 @@
                 .then(res => {
                     alert(res.message);
                     location.reload();
+                })
+                .catch(err => {
+                    alert("Error: " + err);
                 });
         }
     </script>
