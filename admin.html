@@ -11,6 +11,7 @@
     <!-- Chart.js for Bar Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 </head>
 
@@ -75,6 +76,10 @@
                 </tr>
             </table>
         </section>
+        <button onclick="window.open('https://leave-saas-backend.onrender.com/admin/export/excel')">📥 Export to
+            Excel</button>
+        <button onclick="exportToPDF()">🧾 Export to PDF</button>
+
     </div>
 
     <script>
@@ -189,6 +194,30 @@
         }
 
         loadChart();
+
+        async function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const table = document.getElementById("requestsTable");
+
+            let y = 10;
+            doc.setFontSize(12);
+            doc.text("Leave Requests Report", 10, y);
+            y += 10;
+
+            // Loop table rows
+            for (let row of table.rows) {
+                let rowText = [];
+                for (let cell of row.cells) {
+                    rowText.push(cell.innerText);
+                }
+                doc.text(rowText.join(" | "), 10, y);
+                y += 10;
+            }
+
+            doc.save("leave_report.pdf");
+        }
+
     </script>
 
 </body>
