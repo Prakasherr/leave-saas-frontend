@@ -59,3 +59,64 @@ th, td {
   padding: 10px;
   text-align: center;
 }
+
+/* ✅ Main container */
+.container {
+  max-width: 960px;
+  margin: auto;
+  padding: 20px;
+  font-family: sans-serif;
+}
+
+/* ✅ Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  overflow-x: auto;
+  display: block;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* ✅ Buttons */
+button {
+  padding: 6px 10px;
+  margin: 2px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* ✅ Responsive tweaks */
+@media (max-width: 768px) {
+  h1, h2 {
+    font-size: 18px;
+    text-align: center;
+  }
+
+  th, td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  button {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+}
