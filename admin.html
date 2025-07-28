@@ -3,22 +3,23 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js for Bar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <script>
-        // Get user from localStorage
         const user = JSON.parse(localStorage.getItem("user"));
-
-        // Redirect to login if not found
         if (!user) {
             alert("Please log in first.");
             window.location.href = "index.html";
         }
 
-        // Optional: Restrict based on role
         const isAdminPage = window.location.pathname.includes("admin.html");
         const isEmployeePage = window.location.pathname.includes("dashboard.html");
 
@@ -36,6 +37,9 @@
     <div class="container">
         <h1>Welcome, Admin</h1>
 
+        <button onclick="exportToExcel()">Export to Excel</button>
+        <canvas id="leaveChart" width="400" height="200" style="margin-top: 20px;"></canvas>
+
         <section>
             <h2>Leave Requests</h2>
             <table id="requestsTable">
@@ -44,17 +48,8 @@
                     <th>From</th>
                     <th>To</th>
                     <th>Type</th>
+                    <th>Status</th>
                     <th>Action</th>
-                </tr>
-                <tr>
-                    <td>Priya</td>
-                    <td>2025-07-01</td>
-                    <td>2025-07-03</td>
-                    <td>Sick</td>
-                    <td>
-                        <button>✅ Approve</button>
-                        <button>❌ Reject</button>
-                    </td>
                 </tr>
             </table>
         </section>
@@ -76,10 +71,8 @@
         </section>
     </div>
 
-
-
     <script>
-        fetch("http://127.0.0.1:5000/admin/requests")
+        fetch("https://leave-saas-backend.onrender.com/admin/requests")
             .then(res => res.json())
             .then(data => {
                 const table = document.getElementById("requestsTable");
@@ -88,15 +81,15 @@
                     const row = document.createElement("tr");
 
                     row.innerHTML = `
-        <td>${req.name}</td>
-        <td>${req.start_date}</td>
-        <td>${req.end_date}</td>
-        <td>${req.leave_type}</td>
-        <td>${req.status}</td>
-        <td>
-          <button onclick="updateStatus(${req.id}, 'approved')">✅</button>
-          <button onclick="updateStatus(${req.id}, 'rejected')">❌</button>
-        </td>`;
+                        <td>${req.name}</td>
+                        <td>${req.start_date}</td>
+                        <td>${req.end_date}</td>
+                        <td>${req.leave_type}</td>
+                        <td>${req.status}</td>
+                        <td>
+                          <button onclick="updateStatus(${req.id}, 'approved')">✅</button>
+                          <button onclick="updateStatus(${req.id}, 'rejected')">❌</button>
+                        </td>`;
 
                     table.appendChild(row);
                 });
@@ -113,12 +106,48 @@
                     alert(res.message);
                     location.reload();
                 })
-                .catch(err => {
-                    alert("Error: " + err);
+                .catch(err => alert("Error: " + err));
+        }
+
+        function exportToExcel() {
+            fetch("https://leave-saas-backend.onrender.com/admin/requests")
+                .then(res => res.json())
+                .then(data => {
+                    const worksheet = XLSX.utils.json_to_sheet(data);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Leave Requests");
+                    XLSX.writeFile(workbook, "LeaveRequests.xlsx");
+                })
+                .catch(err => alert("Export error: " + err));
+        }
+
+        function loadChart() {
+            fetch("https://leave-saas-backend.onrender.com/admin/requests")
+                .then(res => res.json())
+                .then(data => {
+                    const statusCount = { approved: 0, pending: 0, rejected: 0 };
+                    data.forEach(req => {
+                        const key = req.status.toLowerCase();
+                        if (statusCount[key] !== undefined) statusCount[key]++;
+                    });
+
+                    const ctx = document.getElementById("leaveChart").getContext("2d");
+                    new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: ["Approved", "Pending", "Rejected"],
+                            datasets: [{
+                                label: "Leave Requests",
+                                data: [statusCount.approved, statusCount.pending, statusCount.rejected],
+                                backgroundColor: ["green", "orange", "red"]
+                            }]
+                        }
+                    });
                 });
         }
-    </script>
 
+        loadChart();
+    </script>
 
 </body>
 
