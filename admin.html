@@ -10,6 +10,8 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <!-- Chart.js for Bar Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 
 <body>
@@ -39,6 +41,10 @@
 
         <button onclick="exportToExcel()">Export to Excel</button>
         <canvas id="leaveChart" width="400" height="200" style="margin-top: 20px;"></canvas>
+        <section>
+            <h2>Leave Summary</h2>
+            <canvas id="leaveChart" width="400" height="200"></canvas>
+        </section>
 
         <section>
             <h2>Leave Requests</h2>
@@ -94,6 +100,42 @@
                     table.appendChild(row);
                 });
             });
+        // Summary chart
+        let leaveTypeCount = { Sick: 0, Casual: 0, Paid: 0 };
+
+        data.forEach(req => {
+            if (leaveTypeCount[req.leave_type] !== undefined) {
+                leaveTypeCount[req.leave_type]++;
+            }
+        });
+
+        // Render Chart
+        const ctx = document.getElementById('leaveChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(leaveTypeCount),
+                datasets: [{
+                    label: 'Leave Requests by Type',
+                    data: Object.values(leaveTypeCount),
+                    backgroundColor: ['#007bff', '#ffc107', '#28a745']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
 
         function updateStatus(id, status) {
             fetch(`https://leave-saas-backend.onrender.com/admin/requests/${id}`, {
