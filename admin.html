@@ -2,225 +2,183 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- SheetJS for Excel Export -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js for Bar Chart -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 
 <body>
-    <script>
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
-            alert("Please log in first.");
-            window.location.href = "index.html";
+  <script>
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user) {
+      alert("Please log in first.");
+      window.location.href = "index.html";
+    }
+
+    const isAdminPage = window.location.pathname.includes("admin.html");
+    const isEmployeePage = window.location.pathname.includes("dashboard.html");
+
+    if (isAdminPage && user.role !== "admin") {
+      alert("Access denied. Admins only.");
+      window.location.href = "dashboard.html";
+    }
+
+    if (isEmployeePage && user.role !== "employee") {
+      alert("Access denied. Employees only.");
+      window.location.href = "admin.html";
+    }
+  </script>
+
+  <div class="container">
+    <h1>Welcome, Admin</h1>
+
+    <section>
+      <h2>Leave Summary</h2>
+      <canvas id="leaveChart" width="400" height="200"></canvas>
+    </section>
+
+    <section>
+      <h2>Leave Requests</h2>
+      <button onclick="exportToExcel()">📊 Export to Excel</button>
+      <button onclick="exportToPDF()">🧾 Export to PDF</button>
+      <table id="requestsTable">
+        <tr>
+          <th>Name</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>All Registered Users</h2>
+      <table id="usersTable">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+        </tr>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    function updateStatus(id, status) {
+      fetch(`https://leave-saas-backend.onrender.com/admin/requests/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      })
+        .then(res => res.json())
+        .then(res => {
+          alert(res.message);
+          location.reload();
+        })
+        .catch(err => alert("Error: " + err));
+    }
+
+    function exportToExcel() {
+      fetch("https://leave-saas-backend.onrender.com/admin/requests")
+        .then(res => res.json())
+        .then(data => {
+          const worksheet = XLSX.utils.json_to_sheet(data);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Leave Requests");
+          XLSX.writeFile(workbook, "LeaveRequests.xlsx");
+        })
+        .catch(err => alert("Export error: " + err));
+    }
+
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const table = document.getElementById("requestsTable");
+
+      let y = 10;
+      doc.setFontSize(12);
+      doc.text("Leave Requests Report", 10, y);
+      y += 10;
+
+      for (let row of table.rows) {
+        let rowText = [];
+        for (let cell of row.cells) {
+          rowText.push(cell.innerText);
         }
+        doc.text(rowText.join(" | "), 10, y);
+        y += 10;
+      }
 
-        const isAdminPage = window.location.pathname.includes("admin.html");
-        const isEmployeePage = window.location.pathname.includes("dashboard.html");
+      doc.save("leave_report.pdf");
+    }
 
-        if (isAdminPage && user.role !== "admin") {
-            alert("Access denied. Admins only.");
-            window.location.href = "dashboard.html";
-        }
-
-        if (isEmployeePage && user.role !== "employee") {
-            alert("Access denied. Employees only.");
-            window.location.href = "admin.html";
-        }
-    </script>
-
-    <div class="container">
-        <h1>Welcome, Admin</h1>
-
-        <button onclick="exportToExcel()">Export to Excel</button>
-        <canvas id="leaveChart" width="400" height="200" style="margin-top: 20px;"></canvas>
-        <section>
-            <h2>Leave Summary</h2>
-            <canvas id="leaveChart" width="400" height="200"></canvas>
-        </section>
-
-        <section>
-            <h2>Leave Requests</h2>
-            <table id="requestsTable">
-                <tr>
-                    <th>Name</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </table>
-        </section>
-
-        <section>
-            <h2>Employees</h2>
-            <table>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Total Leaves</th>
-                </tr>
-                <tr>
-                    <td>John</td>
-                    <td>john@example.com</td>
-                    <td>8</td>
-                </tr>
-            </table>
-        </section>
-        <button onclick="window.open('https://leave-saas-backend.onrender.com/admin/export/excel')">📥 Export to
-            Excel</button>
-        <button onclick="exportToPDF()">🧾 Export to PDF</button>
-
-    </div>
-
-    <script>
-        fetch("https://leave-saas-backend.onrender.com/admin/requests")
-            .then(res => res.json())
-            .then(data => {
-                const table = document.getElementById("requestsTable");
-
-                data.forEach(req => {
-                    const row = document.createElement("tr");
-
-                    row.innerHTML = `
-                        <td>${req.name}</td>
-                        <td>${req.start_date}</td>
-                        <td>${req.end_date}</td>
-                        <td>${req.leave_type}</td>
-                        <td>${req.status}</td>
-                        <td>
-                          <button onclick="updateStatus(${req.id}, 'approved')">✅</button>
-                          <button onclick="updateStatus(${req.id}, 'rejected')">❌</button>
-                        </td>`;
-
-                    table.appendChild(row);
-                });
-            });
-        // Summary chart
-        let leaveTypeCount = { Sick: 0, Casual: 0, Paid: 0 };
+    fetch("https://leave-saas-backend.onrender.com/admin/requests")
+      .then(res => res.json())
+      .then(data => {
+        const table = document.getElementById("requestsTable");
+        const leaveTypeCount = { Sick: 0, Casual: 0, Paid: 0 };
 
         data.forEach(req => {
-            if (leaveTypeCount[req.leave_type] !== undefined) {
-                leaveTypeCount[req.leave_type]++;
-            }
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${req.name}</td>
+            <td>${req.start_date}</td>
+            <td>${req.end_date}</td>
+            <td>${req.leave_type}</td>
+            <td>${req.status}</td>
+            <td>
+              <button onclick="updateStatus(${req.id}, 'approved')">✅</button>
+              <button onclick="updateStatus(${req.id}, 'rejected')">❌</button>
+            </td>`;
+          table.appendChild(row);
+
+          if (leaveTypeCount[req.leave_type] !== undefined) {
+            leaveTypeCount[req.leave_type]++;
+          }
         });
 
-        // Render Chart
-        const ctx = document.getElementById('leaveChart').getContext('2d');
+        const ctx = document.getElementById("leaveChart").getContext("2d");
         new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(leaveTypeCount),
-                datasets: [{
-                    label: 'Leave Requests by Type',
-                    data: Object.values(leaveTypeCount),
-                    backgroundColor: ['#007bff', '#ffc107', '#28a745']
-                }]
+          type: 'bar',
+          data: {
+            labels: Object.keys(leaveTypeCount),
+            datasets: [{
+              label: 'Leave Requests by Type',
+              data: Object.values(leaveTypeCount),
+              backgroundColor: ['#007bff', '#ffc107', '#28a745']
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false }
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
+            scales: { y: { beginAtZero: true } }
+          }
         });
+      });
 
-
-        function updateStatus(id, status) {
-            fetch(`https://leave-saas-backend.onrender.com/admin/requests/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status })
-            })
-                .then(res => res.json())
-                .then(res => {
-                    alert(res.message);
-                    location.reload();
-                })
-                .catch(err => alert("Error: " + err));
-        }
-
-        function exportToExcel() {
-            fetch("https://leave-saas-backend.onrender.com/admin/requests")
-                .then(res => res.json())
-                .then(data => {
-                    const worksheet = XLSX.utils.json_to_sheet(data);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "Leave Requests");
-                    XLSX.writeFile(workbook, "LeaveRequests.xlsx");
-                })
-                .catch(err => alert("Export error: " + err));
-        }
-
-        function loadChart() {
-            fetch("https://leave-saas-backend.onrender.com/admin/requests")
-                .then(res => res.json())
-                .then(data => {
-                    const statusCount = { approved: 0, pending: 0, rejected: 0 };
-                    data.forEach(req => {
-                        const key = req.status.toLowerCase();
-                        if (statusCount[key] !== undefined) statusCount[key]++;
-                    });
-
-                    const ctx = document.getElementById("leaveChart").getContext("2d");
-                    new Chart(ctx, {
-                        type: "bar",
-                        data: {
-                            labels: ["Approved", "Pending", "Rejected"],
-                            datasets: [{
-                                label: "Leave Requests",
-                                data: [statusCount.approved, statusCount.pending, statusCount.rejected],
-                                backgroundColor: ["green", "orange", "red"]
-                            }]
-                        }
-                    });
-                });
-        }
-
-        loadChart();
-
-        async function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const table = document.getElementById("requestsTable");
-
-            let y = 10;
-            doc.setFontSize(12);
-            doc.text("Leave Requests Report", 10, y);
-            y += 10;
-
-            // Loop table rows
-            for (let row of table.rows) {
-                let rowText = [];
-                for (let cell of row.cells) {
-                    rowText.push(cell.innerText);
-                }
-                doc.text(rowText.join(" | "), 10, y);
-                y += 10;
-            }
-
-            doc.save("leave_report.pdf");
-        }
-
-    </script>
-
+    fetch("https://leave-saas-backend.onrender.com/admin/users")
+      .then(res => res.json())
+      .then(users => {
+        const table = document.getElementById("usersTable");
+        users.forEach(user => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+          `;
+          table.appendChild(row);
+        });
+      });
+  </script>
 </body>
 
 </html>
